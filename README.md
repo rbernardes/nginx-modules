@@ -1,5 +1,5 @@
 
-[https://atlantistec.inf.br/nginx_logo.png]
+![nginx](https://github.com/rbernardes/nginx-modules/blob/master/nginx_logo.png?raw=true)
 Ubuntu 18.04 + nginx + modules (headers more + geoip2 + pagespeed + flv + brotli + passenger) + php7.2-fpm
 
 ### Update your Ubuntu with these repositories:
