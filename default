@@ -1,0 +1,200 @@
+
+# Default server configuration
+#
+server {
+	listen 80;
+	#listen [::]:80 default_server;
+	
+	root /var/www/;
+	
+	# Add index.php to the list if you are using PHP
+	index index.php index.html;
+	server_name _;
+
+	client_max_body_size 100M;	
+	# unless the request is for a valid file, send to bootstrap
+        if (!-e $request_filename)
+         {
+        rewrite ^(.+)$ /index.php?q=$1 last;
+        }
+
+#	if ($allowed_country = no) {
+#	return 444;
+#	}
+
+	location / {
+		try_files $uri $uri/ =404;
+	}
+
+	# enable pagespeed module on this server block
+        pagespeed on;
+
+        # Needs to exist and be writable by nginx. Use tmpfs for best performance.
+        pagespeed FileCachePath /var/ngx_pagespeed_cache;
+
+        # Ensure requests for pagespeed optimized resources go to the pagespeed handler
+        # and no extraneous headers get set.
+        location ~ "\.pagespeed\.([a-z]\.)?[a-z]{2}\.[^.]{10}\.[^.]+" {
+        add_header "" "";
+        }
+        location ~ "^/pagespeed_static/" { }
+        location ~ "^/ngx_pagespeed_beacon$" { }
+
+        pagespeed RewriteLevel CoreFilters;
+
+
+	## Block SQL injections
+    set $block_sql_injections 0;
+    if ($query_string ~ "union.*select.*\(") {
+        set $block_sql_injections 1;
+    }
+    if ($query_string ~ "union.*all.*select.*") {
+        set $block_sql_injections 1;
+    }
+    if ($query_string ~ "concat.*\(") {
+        set $block_sql_injections 1;
+    }
+    if ($block_sql_injections = 1) {
+        return 403;
+    }
+
+    ## Block file injections
+    set $block_file_injections 0;
+    if ($query_string ~ "[a-zA-Z0-9_]=http://") {
+        set $block_file_injections 1;
+    }
+    if ($query_string ~ "[a-zA-Z0-9_]=(\.\.//?)+") {
+        set $block_file_injections 1;
+    }
+    if ($query_string ~ "[a-zA-Z0-9_]=/([a-z0-9_.]//?)+") {
+        set $block_file_injections 1;
+    }
+    if ($block_file_injections = 1) {
+        return 403;
+    }
+
+    ## Block common exploits
+    set $block_common_exploits 0;
+    if ($query_string ~ "(<|%3C).*script.*(>|%3E)") {
+        set $block_common_exploits 1;
+    }
+    if ($query_string ~ "GLOBALS(=|\[|\%[0-9A-Z]{0,2})") {
+        set $block_common_exploits 1;
+    }
+    if ($query_string ~ "_REQUEST(=|\[|\%[0-9A-Z]{0,2})") {
+        set $block_common_exploits 1;
+    }
+    if ($query_string ~ "proc/self/environ") {
+        set $block_common_exploits 1;
+    }
+    if ($query_string ~ "mosConfig_[a-zA-Z_]{1,21}(=|\%3D)") {
+        set $block_common_exploits 1;
+    }
+    if ($query_string ~ "base64_(en|de)code\(.*\)") {
+        set $block_common_exploits 1;
+    }
+    if ($block_common_exploits = 1) {
+        return 403;
+    }
+
+    ## Block spam
+    set $block_spam 0;
+    if ($query_string ~ "\b(ultram|unicauca|valium|viagra|vicodin|xanax|ypxaieo)\b") {
+        set $block_spam 1;
+    }
+    if ($query_string ~ "\b(erections|hoodia|huronriveracres|impotence|levitra|libido)\b") {
+        set $block_spam 1;
+    }
+    if ($query_string ~ "\b(ambien|blue\spill|cialis|cocaine|ejaculation|erectile)\b") {
+        set $block_spam 1;
+    }
+    if ($query_string ~ "\b(lipitor|phentermin|pro[sz]ac|sandyauer|tramadol|troyhamby)\b") {
+        set $block_spam 1;
+    }
+    if ($block_spam = 1) {
+        return 403;
+    }
+
+    ## Block user agents
+    set $block_user_agents 0;
+
+    # Don't disable wget if you need it to run cron jobs!
+    #if ($http_user_agent ~ "Wget") {
+    #    set $block_user_agents 1;
+    #}
+
+    # Disable Akeeba Remote Control 2.5 and earlier
+    if ($http_user_agent ~ "Indy Library") {
+        set $block_user_agents 1;
+    }
+
+    # Common bandwidth hoggers and hacking tools.
+    if ($http_user_agent ~ "libwww-perl") {
+        set $block_user_agents 1;
+    }
+    if ($http_user_agent ~ "GetRight") {
+        set $block_user_agents 1;
+    }
+    if ($http_user_agent ~ "GetWeb!") {
+        set $block_user_agents 1;
+    }
+    if ($http_user_agent ~ "Go!Zilla") {
+        set $block_user_agents 1;
+    }
+    if ($http_user_agent ~ "Download Demon") {
+        set $block_user_agents 1;
+    }
+    if ($http_user_agent ~ "Go-Ahead-Got-It") {
+        set $block_user_agents 1;
+    }
+    if ($http_user_agent ~ "TurnitinBot") {
+        set $block_user_agents 1;
+    }
+    if ($http_user_agent ~ "GrabNet") {
+        set $block_user_agents 1;
+    }
+
+    if ($block_user_agents = 1) {
+        return 403;
+    }
+
+	location ~ .php$ {
+                try_files $uri =404;
+
+                include /etc/nginx/fastcgi_params;
+                fastcgi_index index.php;
+                fastcgi_split_path_info ^(.+\.php)(/.+)$;
+                fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
+                fastcgi_cache_valid 200 60m;
+                if (-f $request_filename) {
+                        #fastcgi_pass unix:/run/php/php7.0-fpm.sock;
+                        fastcgi_pass 127.0.0.1:9000;
+                }
+        }
+	# deny access to .htaccess files, if Apache's document root
+	# concurs with nginx's one
+	#
+	#location ~ /\.ht {
+	#	deny all;
+	#}
+}
+
+
+# Virtual Host configuration for example.com
+#
+# You can move that to a different file under sites-available/ and symlink that
+# to sites-enabled/ to enable it.
+#
+#server {
+#	listen 80;
+#	listen [::]:80;
+#
+#	server_name example.com;
+#
+#	root /var/www/example.com;
+#	index index.html;
+#
+#	location / {
+#		try_files $uri $uri/ =404;
+#	}
+#}
