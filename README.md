@@ -182,6 +182,48 @@ pm.start_servers - (cpu cores * 4)
 pm.min_spare_servers - (cpu cores * 2)
 pm.max_spare_servers - (cpu cores * 4)
 pm.max_requests - max number of request by each php-fpm thread
+
+### CONF FILE ###
+[atom]
+user = www-data
+group = www-data
+
+listen = 127.0.0.1:9000
+listen.owner = www-data
+listen.group = www-data
+listen.mode = 0660
+
+;Config Default
+
+pm = dynamic
+;pm = ondemand
+
+php_value[session.save_handler] = files
+php_value[session.save_path]    = /var/lib/php/sessions
+php_value[soap.wsdl_cache_dir]  = /tmp
+
+; Config High Traffic
+
+;##1##
+pm.max_children = 585
+pm.start_servers = 32
+pm.min_spare_servers = 16
+pm.max_spare_servers = 32
+pm.max_requests = 1000
+;pm.process_idle_timeout = 15s
+request_terminate_timeout = 6000s
+;##1##
+
+
+pm.status_path = /status
+ping.path = /ping
+
+env[HOSTNAME] = $HOSTNAME
+env[PATH] = /usr/local/bin:/usr/bin:/bin
+env[TMP] = /tmp
+env[TMPDIR] = /tmp
+env[TEMP] = /tmp
+### CONF FILE ###
 ```
 
 ### Change the "php-fpm.conf" file:
