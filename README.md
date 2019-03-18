@@ -60,12 +60,12 @@ rm psol-1.13.35.2-x64.tar.gz v1.13.35.2-stable.tar.gz
 
 ### Change the "rules" file (attached):
 ```
-Path: /usr/local/src/nginx*/debian/
+Path: /usr/local/src/nginx-1.14.2/debian
 ```
 
 ### Build packages:
 ```
-cd /usr/local/src/nginx*/
+/usr/local/src/nginx-1.14.2/
 dpkg-buildpackage -b -uc -us
 ```
 
