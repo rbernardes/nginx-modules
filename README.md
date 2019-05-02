@@ -299,5 +299,5 @@ configure arguments: --prefix=/etc/nginx --sbin-path=/usr/sbin/nginx --modules-p
 ```
 ###
 Litecoin - LUs1p2BLcePR8pDQPXwekbye45EAsqwrWh
-### ``` 
+###
 :)
